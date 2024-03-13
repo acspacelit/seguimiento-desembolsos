@@ -246,11 +246,17 @@ def main():
 
     # Asegurarse de que haya años disponibles
     if unique_years_filtered:
+        # Intentar establecer 2024 como el año predeterminado si está disponible
+        default_year = 2024 if 2024 in unique_years_filtered else unique_years_filtered[0]
+
         # Seleccionar el año mediante un slider
-        year = st.slider("Selecciona el año", min_value=unique_years_filtered[0], max_value=unique_years_filtered[-1], value=unique_years_filtered[0])
+        year = st.slider("Selecciona el año", 
+                         min_value=min(unique_years_filtered), 
+                         max_value=max(unique_years_filtered), 
+                         value=default_year)
     else:
         st.error("No hay datos disponibles para mostrar basados en la selección de país.")
-        return # Finaliza la ejecución de la función si no hay años para mostrar
+        return 
 
     # Añadir el filtro de Sector aquí
     unique_sectors = sorted(filtered_data['Sector'].unique().tolist())
