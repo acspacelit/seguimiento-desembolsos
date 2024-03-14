@@ -78,7 +78,7 @@ def get_monthly_data(data, year):
     data_year = data[data['Year'] == year]
 
     # Agrupar los datos por mes y sumar los montos
-    grouped_data = data_year.groupby('Month').agg({'Proyectados': 'sum', 'Ejecutados': 'sum', 'ProyeccionesIniciales': 'sum'}).reset_index()
+    grouped_data = data_year.groupby('Month').agg({'Ejecutados': 'sum','Proyectados': 'sum', 'ProyeccionesIniciales': 'sum'}).reset_index()
 
     # Reemplazar el número del mes con el nombre del mes en español
     spanish_months = [calendar.month_name[i].capitalize() for i in range(1, 13)]
@@ -106,7 +106,7 @@ def create_line_chart_with_labels(data):
 
     # Create a line chart
     line = alt.Chart(long_df).mark_line(point=True).encode(
-        x=alt.X('Month:N', sort=month_order_es),  # Use the order for months in español
+        x=alt.X('Month:N', sort=month_order_es),  
         y=alt.Y('Amount:Q', title='Amount'),
         color='index:N',
         tooltip=['Month', 'Amount', 'index']
