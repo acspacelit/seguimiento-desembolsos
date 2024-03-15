@@ -78,7 +78,9 @@ def get_monthly_data(data, year):
     data_year = data[data['Year'] == year]
 
     # Agrupar los datos por mes y sumar los montos
-    grouped_data = data_year.groupby('Month').agg({'Ejecutados': 'sum','Proyectados': 'sum', 'ProyeccionesIniciales': 'sum'}).reset_index()
+    grouped_data = data_year.groupby('Month').agg({'Ejecutados': 'sum',
+                                                   'Proyectados': 'sum',
+                                                   'ProyeccionesIniciales': 'sum'}).reset_index()
 
     # Reemplazar el número del mes con el nombre del mes en español
     spanish_months = [calendar.month_name[i].capitalize() for i in range(1, 13)]
@@ -90,42 +92,126 @@ def get_monthly_data(data, year):
     # Calcular los totales para cada fila
     transposed_data['Totales'] = transposed_data.sum(axis=1)
 
+    # Calcular Ejecutados/Proyectado como la división de cada valor Ejecutado del mes por el total de Proyectados
+    transposed_data.loc['Porcentaje Ejecutado/Proyectado'] = (transposed_data.loc['Ejecutados'] / transposed_data.loc['Proyectados', 'Totales'] * 100).fillna(0).round(2)
+
+    # Calcular Ejecutado/Iniciales como la división de cada valor Ejecutado del mes por el total de ProyeccionesIniciales
+    transposed_data.loc['Porcentaje Ejecutado/Iniciales'] = (transposed_data.loc['Ejecutados'] / transposed_data.loc['ProyeccionesIniciales', 'Totales'] * 100).fillna(0).round(2)
+
     return transposed_data
 
+
+import altair as alt
+
 def create_line_chart_with_labels(data):
-    # Eliminar la columna 'Totales' del DataFrame para evitar que se muestre en el gráfico
+    # Filtrar solo las primeras 3 filas para el gráfico
+    if data.shape[0] > 3:
+        data = data.iloc[:3, :]
+
+    # Eliminar la columna 'Totales' si está presente
     if 'Totales' in data.columns:
         data = data.drop(columns=['Totales'])
 
-    # Melt the DataFrame to long format
+    # Convertir el DataFrame a formato largo
     long_df = data.reset_index().melt('index', var_name='Month', value_name='Amount')
 
-    # Define the correct order for months in español
+    # Definir el orden correcto de los meses en español
     month_order_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                       "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-    # Create a line chart
+    # Definir los colores para cada línea
+    color_scale = alt.Scale(domain=['Ejecutados', 'Proyectados', 'ProyeccionesIniciales'],
+                            range=['red', 'blue', 'skyblue'])
+
+    # Crear el gráfico de líneas
     line = alt.Chart(long_df).mark_line(point=True).encode(
         x=alt.X('Month:N', sort=month_order_es),  
         y=alt.Y('Amount:Q', title='Amount'),
-        color='index:N',
+        color=alt.Color('index:N', scale=color_scale),
         tooltip=['Month', 'Amount', 'index']
     ).properties(
         width=600,
-        height=500
+        height=400
     )
 
-    # Add text labels for the data points
+    # Agregar etiquetas de texto para los puntos de datos
     text = line.mark_text(
         align='left',
         baseline='middle',
-        dx=12,
-        dy=12 
+        dx=7,
+        dy=-15  # Ajusta para evitar solapamiento con los puntos
     ).encode(
-        text='Amount:Q'
+        text=alt.Text('Amount:Q', format=".2f")  # Formatear a dos decimales si es necesario
     )
 
-    return (line + text)
+    # Combinar el gráfico de líneas con las etiquetas de texto
+    chart = line + text
+
+    return chart
+
+def calculate_cumulative_sum(data):
+    # Asegurarse de trabajar solo con las tres filas originales en caso de que haya más filas
+    if data.shape[0] > 3:
+        data = data.iloc[:3, :]
+
+    # Calcula la suma acumulada a lo largo de los meses para cada una de las filas
+    # Asegúrate de no incluir la columna de Totales en el cálculo
+    data_cumsum = data.drop(columns=['Totales'], errors='ignore').cumsum(axis=1)
+
+    # Agregar la fila de totales al final si se necesita
+    data_cumsum['Totales'] = data_cumsum.iloc[:, -1]
+
+    return data_cumsum
+
+def create_cumulative_line_chart(data):
+    # Convertir los valores a millones y redondear a enteros
+    data_in_millions = data.apply(lambda x: (x / 1).round())
+
+    # Filtrar solo las primeras 3 filas para el gráfico
+    if data_in_millions.shape[0] > 3:
+        data_in_millions = data_in_millions.iloc[:3, :]
+
+    # Eliminar la columna 'Totales' si está presente
+    if 'Totales' in data_in_millions.columns:
+        data_in_millions = data_in_millions.drop(columns=['Totales'])
+    
+    # Convertir el DataFrame a formato largo
+    long_df = data_in_millions.reset_index().melt('index', var_name='Month', value_name='Cumulative Amount')
+
+    # Definir el orden correcto de los meses en español
+    month_order_es = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+    # Definir los colores para cada línea
+    color_scale = alt.Scale(domain=['Ejecutados', 'Proyectados', 'ProyeccionesIniciales'],
+                            range=['red', 'blue', 'skyblue'])
+
+    # Crear el gráfico de líneas
+    line = alt.Chart(long_df).mark_line(point=True).encode(
+        x=alt.X('Month:N', sort=month_order_es),  
+        y=alt.Y('Cumulative Amount:Q', title='Cumulative Amount (millions)'),
+        color=alt.Color('index:N', scale=color_scale),
+        tooltip=['Month', 'Cumulative Amount', 'index']
+    ).properties(
+        width=600,
+        height=400
+    )
+
+    # Agregar etiquetas de texto para los puntos de datos
+    text = line.mark_text(
+        align='left',
+        baseline='middle',
+        dx=7,
+        dy=-15  # Ajusta para evitar solapamiento con los puntos
+    ).encode(
+        text=alt.Text('Cumulative Amount:Q')  # Se omiten los decimales en el gráfico
+    )
+
+    # Combinar el gráfico de líneas con las etiquetas de texto
+    chart = line + text
+
+    return chart
+
 
 
 def create_comparison_bar_chart(filtered_data, year):
@@ -170,6 +256,8 @@ def create_comparison_bar_chart(filtered_data, year):
 
     # Mostrar el gráfico en Streamlit
     st.pyplot(fig)
+
+
 
 def create_responsible_comparison_chart(filtered_data, year):
     # Filtrar los datos para el año seleccionado y que tengan valores
@@ -289,6 +377,7 @@ def main():
     # Mostrar los datos en Streamlit
     st.write(f"Desembolsos Mensuales para {year} - País(es) seleccionado(s): {', '.join(selected_countries)} - Proyecto seleccionado: {selected_project}")
     st.write(monthly_data)
+
     # Convertir el DataFrame a bytes y agregar botón de descarga para ambas tablas
     excel_bytes_monto = dataframe_to_excel_bytes(monthly_data)
     st.download_button(
@@ -301,6 +390,15 @@ def main():
     # Crear y mostrar el gráfico de líneas con etiquetas
     chart = create_line_chart_with_labels(monthly_data)
     st.altair_chart(chart, use_container_width=True)
+
+    # Calcular la suma acumulada de los datos mensuales
+    cumulative_data = calculate_cumulative_sum(monthly_data)
+    # También mostrar la suma acumulada
+    st.write(f"Suma acumulada de Desembolsos para {year}")
+    st.write(cumulative_data)
+
+    cumulative_chart = create_cumulative_line_chart(cumulative_data)
+    st.altair_chart(cumulative_chart)
 
     create_comparison_bar_chart(filtered_data, year)
 
