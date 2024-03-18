@@ -353,9 +353,6 @@ def main():
         # Filtrar los datos por el responsable seleccionado
         filtered_data = filtered_data[filtered_data['Responsable'] == selected_responsible]
 
-    # Filtrar por IDOperacion después de obtener los datos mensuales
-    selected_project = st.selectbox("Selecciona proyecto", ["Todos"] + filtered_data['IDOperacion'].unique().tolist())
-
     # Añadir alias a IDOperacion después de cualquier filtrado previo
     operacion_to_alias = filtered_data.set_index('IDOperacion')['Alias'].to_dict()
     filtered_data['IDOperacion'] = filtered_data['IDOperacion'].astype(str)
@@ -377,7 +374,7 @@ def main():
     monthly_data = get_monthly_data(filtered_data, year)
 
     # Mostrar los datos en Streamlit
-    st.write(f"Desembolsos Mensuales para {year} - País(es) seleccionado(s): {', '.join(selected_countries)} - Proyecto seleccionado: {selected_project}")
+    st.write(f"Desembolsos Mensuales para {year} - País(es) seleccionado(s): {', '.join(selected_countries)}")
     st.write(monthly_data)
 
     # Convertir el DataFrame a bytes y agregar botón de descarga para ambas tablas
