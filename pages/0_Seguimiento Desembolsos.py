@@ -43,14 +43,14 @@ def load_data():
     data_proyecciones_iniciales['Pais'] = data_proyecciones_iniciales['IDOperacion'].str[:2].map({'AR': 'ARGENTINA', 'BO': 'BOLIVIA', 'BR': 'BRASIL', 'PY': 'PARAGUAY', 'UR': 'URUGUAY'})
     data_proyecciones['Pais'] = data_proyecciones['IDOperacion'].str[:2].map({'AR': 'ARGENTINA', 'BO': 'BOLIVIA', 'BR': 'BRASIL', 'PY': 'PARAGUAY', 'UR': 'URUGUAY'})
 
-    grouped_operaciones = data_operaciones.groupby(['Pais','IDOperacion','Responsable', 'Year', 'Month', 'Sector']).agg({'Monto': 'sum'}).rename(columns={'Monto': 'Ejecutados'}).reset_index()
-    grouped_proyecciones = data_proyecciones.groupby(['Pais', 'IDOperacion','Responsable','Year', 'Month', 'Sector']).agg({'Monto': 'sum'}).rename(columns={'Monto': 'Proyectados'}).reset_index()
+    grouped_operaciones = data_operaciones.groupby(['Pais','IDOperacion','Responsable', 'Year', 'Month', 'Sector','Alias']).agg({'Monto': 'sum'}).rename(columns={'Monto': 'Ejecutados'}).reset_index()
+    grouped_proyecciones = data_proyecciones.groupby(['Pais', 'IDOperacion','Responsable','Year', 'Month', 'Sector','Alias']).agg({'Monto': 'sum'}).rename(columns={'Monto': 'Proyectados'}).reset_index()
     # Agrupa data_proyecciones_iniciales por los campos necesarios
-    grouped_proyecciones_iniciales = data_proyecciones_iniciales.groupby(['Pais', 'Responsable','IDOperacion', 'Year', 'Month', 'Sector']).agg({'ProyeccionesIniciales': 'sum'}).reset_index()
+    grouped_proyecciones_iniciales = data_proyecciones_iniciales.groupby(['Pais', 'Responsable','IDOperacion', 'Year', 'Month', 'Sector','Alias']).agg({'ProyeccionesIniciales': 'sum'}).reset_index()
 
     # Combina los tres conjuntos de datos: operaciones, proyecciones y proyecciones iniciales
-    merged_data = pd.merge(grouped_operaciones, grouped_proyecciones, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector'], how='outer')
-    merged_data = pd.merge(merged_data, grouped_proyecciones_iniciales, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector'], how='outer').fillna(0)
+    merged_data = pd.merge(grouped_operaciones, grouped_proyecciones, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector','Alias'], how='outer')
+    merged_data = pd.merge(merged_data, grouped_proyecciones_iniciales, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector','Alias'], how='outer').fillna(0)
     
      # Función para elegir el valor de 'Responsable'
     def elegir_responsable(row):
@@ -227,7 +227,7 @@ def create_comparison_bar_chart(filtered_data, year):
     bars1 = ax.bar(index - bar_width/2, grouped_data['Ejecutados'], bar_width, label='Ejecutados', color='r')
 
     # Crear las barras para 'Proyectados'
-    bars2 = ax.bar(index + bar_width/2, grouped_data['ProyeccionesIniciales'], bar_width, label='Proyectados', color='skyblue')
+    bars2 = ax.bar(index + bar_width/2, grouped_data['ProyeccionesIniciales'], bar_width, label='ProyeccionesIniciales', color='skyblue')
 
     # Añadir las etiquetas de los datos en las barras
     ax.bar_label(bars1, padding=3, fontsize=8, fmt='%.2f')  # Reducir el tamaño de la fuente aquí
@@ -248,7 +248,6 @@ def create_comparison_bar_chart(filtered_data, year):
 
     # Mostrar el gráfico en Streamlit
     st.pyplot(fig)
-
 
 
 def create_responsible_comparison_chart(filtered_data, year):
@@ -357,11 +356,22 @@ def main():
     # Filtrar por IDOperacion después de obtener los datos mensuales
     selected_project = st.selectbox("Selecciona proyecto", ["Todos"] + filtered_data['IDOperacion'].unique().tolist())
 
-    if selected_project == "Todos":
-        filtered_data = filtered_data
-    else:
-        # Filtrar por IDOperacion
+    # Añadir alias a IDOperacion después de cualquier filtrado previo
+    operacion_to_alias = filtered_data.set_index('IDOperacion')['Alias'].to_dict()
+    filtered_data['IDOperacion'] = filtered_data['IDOperacion'].astype(str)
+    filtered_data['IDOperacion_Alias'] = filtered_data['IDOperacion'].map(lambda x: f"{x} ({operacion_to_alias.get(x, '')})")
+
+    # Ahora, utilizar IDOperacion_Alias para la selección del proyecto en lugar de IDOperacion
+    unique_operacion_alias = sorted(filtered_data['IDOperacion_Alias'].unique())
+    selected_project_alias = st.selectbox("Selecciona proyecto", ["Todos"] + unique_operacion_alias)
+
+    if selected_project_alias != "Todos":
+        # Extraer el IDOperacion del alias seleccionado para filtrar
+        selected_project = selected_project_alias.split(" (")[0]  # Asumiendo que el IDOperacion está antes del primer paréntesis
         filtered_data = filtered_data[filtered_data['IDOperacion'] == selected_project]
+    else:
+        # Si se selecciona "Todos", no es necesario filtrar más
+        pass
 
     # Obtener datos mensuales para el año seleccionado
     monthly_data = get_monthly_data(filtered_data, year)
