@@ -92,12 +92,6 @@ def get_monthly_data(data, year):
     # Calcular los totales para cada fila
     transposed_data['Totales'] = transposed_data.sum(axis=1)
 
-    # Calcular Ejecutados/Proyectado como la división de cada valor Ejecutado del mes por el total de Proyectados
-    transposed_data.loc['Porcentaje Ejecutado/Proyectado'] = (transposed_data.loc['Ejecutados'] / transposed_data.loc['Proyectados', 'Totales'] * 100).fillna(0).round(2)
-
-    # Calcular Ejecutado/Iniciales como la división de cada valor Ejecutado del mes por el total de ProyeccionesIniciales
-    transposed_data.loc['Porcentaje Ejecutado/Iniciales'] = (transposed_data.loc['Ejecutados'] / transposed_data.loc['ProyeccionesIniciales', 'Totales'] * 100).fillna(0).round(2)
-
     return transposed_data
 
 
