@@ -17,7 +17,7 @@ def dataframe_to_excel_bytes(df):
 def load_data():
     url_operaciones = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeeSag2FV6X2E2aS7PIXfZmNOW7RQfjAfN9L9R_EaW_q0Z91DZYwK1eLtQago7LFy8qya-ltrJkosb/pub?gid=1582263470&single=true&output=csv"
     url_proyecciones_iniciales = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeeSag2FV6X2E2aS7PIXfZmNOW7RQfjAfN9L9R_EaW_q0Z91DZYwK1eLtQago7LFy8qya-ltrJkosb/pub?gid=0&single=true&output=csv"
-    url_proyecciones = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRFmOu4IjdEt7gLuAqjJTMvcpelmTr_IsL1WRy238YgRPDGLxsW74iMVUhYM2YegUblAKbLemfMxpW8/pub?gid=81813189&single=true&output=csv"
+    url_proyecciones = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeeSag2FV6X2E2aS7PIXfZmNOW7RQfjAfN9L9R_EaW_q0Z91DZYwK1eLtQago7LFy8qya-ltrJkosb/pub?gid=1701000593&single=true&output=csv"
     
     data_operaciones = pd.read_csv(url_operaciones, parse_dates=['FechaEfectiva'])
     data_proyecciones_iniciales = pd.read_csv(url_proyecciones_iniciales, parse_dates=['FechaProgramada'], dayfirst=True)
@@ -67,8 +67,8 @@ def load_data():
     merged_data = merged_data.drop(['Responsable_x', 'Responsable_y'], axis=1)
 
     # Conversiones finales y ajustes de escala
-    merged_data['Ejecutados'] = (merged_data['Ejecutados']).round(2)
-    merged_data['Proyectados'] = (merged_data['Proyectados'] / 1000000).round(2)
+    merged_data['Ejecutados'] = (merged_data['Ejecutados']/1000000).round(2)
+    merged_data['Proyectados'] = (merged_data['Proyectados']/1000000).round(2)
 
     return merged_data
 
