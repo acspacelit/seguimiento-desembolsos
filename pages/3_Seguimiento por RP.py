@@ -312,8 +312,8 @@ def main():
     # Obtener lista de años únicos basados en los datos filtrados
     unique_years = data['Year'].unique().tolist()
 
-    # Filtrar por Pais con selección múltiple
-    selected_countries = st.multiselect("Selecciona país(es)", ["Todos"] + data['Pais'].unique().tolist())
+    # Filtrar por País con selección múltiple
+    selected_countries = st.multiselect("Selecciona país(es)", ["Todos"] + data['Pais'].unique().tolist(), default="Todos")
 
     if "Todos" in selected_countries:
         filtered_data = data
@@ -324,72 +324,75 @@ def main():
     # Convertir los valores de año a enteros y obtener la lista ordenada
     unique_years_filtered = sorted(filtered_data['Year'].astype(int).unique())
 
-    # Asegurarse de que haya años disponibles
-    if unique_years_filtered:
-        # Intentar establecer 2024 como el año predeterminado si está disponible
-        default_year = 2024 if 2024 in unique_years_filtered else unique_years_filtered[0]
+    # Intentar establecer 2024 como el año predeterminado si está disponible
+    default_year = 2024 if 2024 in unique_years_filtered else (unique_years_filtered[0] if unique_years_filtered else None)
 
-        # Seleccionar el año mediante un slider
-        year = st.slider("Selecciona el año", 
-                         min_value=min(unique_years_filtered), 
-                         max_value=max(unique_years_filtered), 
-                         value=default_year)
-    else:
-        st.error("No hay datos disponibles para mostrar basados en la selección de país.")
-        return 
+    # Seleccionar el año mediante un selectbox
+    if default_year is not None:
+        year = st.selectbox("Selecciona el año", unique_years_filtered, index=unique_years_filtered.index(default_year))
 
-    # Filtrar por año seleccionado
-    filtered_data = filtered_data[filtered_data['Year'] == year]
+        # Filtrar por año seleccionado
+        filtered_data = filtered_data[filtered_data['Year'] == year]
 
-    # Añadir filtro por Mes
-    unique_months = sorted(filtered_data['Month'].unique().tolist())
-    selected_month = st.selectbox("Selecciona mes", ["Todos"] + unique_months)
+        # Añadir filtro por Mes
+        unique_months = sorted(filtered_data['Month'].unique().tolist())
 
-    if selected_month != "Todos":
-        # Filtrar los datos por el mes seleccionado
-        filtered_data = filtered_data[filtered_data['Month'] == selected_month]
+        # Convertir meses a enteros si es necesario
+        unique_months_int = [int(month) for month in unique_months]
 
-    # Añadir el filtro de Responsable aquí
-    unique_responsibles = sorted(filtered_data['Responsable'].drop_duplicates().tolist())
-    selected_responsible = st.selectbox("Selecciona responsable", ["Todos"] + unique_responsibles)
+        if unique_months_int:
+            min_month = min(unique_months_int)
+            max_month = max(unique_months_int)
+            default_month = max_month
 
-    if selected_responsible != "Todos":
-        # Filtrar los datos por el responsable seleccionado
-        filtered_data = filtered_data[filtered_data['Responsable'] == selected_responsible]
+            # Seleccionar el mes mediante un slider
+            month = st.slider("Selecciona el mes acumulativo", 
+                            min_value=min_month, 
+                            max_value=max_month, 
+                            value=default_month)
 
-    # Añadir alias a IDOperacion después de cualquier filtrado previo
-    operacion_to_alias = filtered_data.set_index('IDOperacion')['Alias'].to_dict()
-    filtered_data['IDOperacion'] = filtered_data['IDOperacion'].astype(str)
-    filtered_data['IDOperacion_Alias'] = filtered_data['IDOperacion'].map(lambda x: f"{x} ({operacion_to_alias.get(x, '')})")
+            # Filtrar los datos hasta el mes seleccionado (acumulativo)
+            filtered_data = filtered_data[filtered_data['Month'].astype(int) <= month]
 
-    # Ahora, utilizar IDOperacion_Alias para la selección del proyecto en lugar de IDOperacion
-    unique_operacion_alias = sorted(filtered_data['IDOperacion_Alias'].unique())
-    selected_project_alias = st.selectbox("Selecciona proyecto", ["Todos"] + unique_operacion_alias)
+        # Añadir el filtro de Responsable aquí
+        unique_responsibles = sorted(filtered_data['Responsable'].drop_duplicates().tolist())
+        selected_responsible = st.selectbox("Selecciona responsable", ["Todos"] + unique_responsibles)
 
-    if selected_project_alias != "Todos":
-        # Extraer el IDOperacion del alias seleccionado para filtrar
-        selected_project = selected_project_alias.split(" (")[0]  # Asumiendo que el IDOperacion está antes del primer paréntesis
-        filtered_data = filtered_data[filtered_data['IDOperacion'] == selected_project]
-    else:
-        # Si se selecciona "Todos", no es necesario filtrar más
-        pass
+        if selected_responsible != "Todos":
+            # Filtrar los datos por el responsable seleccionado
+            filtered_data = filtered_data[filtered_data['Responsable'] == selected_responsible]
 
-    data_filtered = get_data(filtered_data,year)
-    # Obtener datos mensuales para el año seleccionado
-    monthly_data = get_monthly_data(filtered_data, year)
+        # Añadir alias a IDOperacion después de cualquier filtrado previo
+        operacion_to_alias = filtered_data.set_index('IDOperacion')['Alias'].to_dict()
+        filtered_data['IDOperacion'] = filtered_data['IDOperacion'].astype(str)
+        filtered_data['IDOperacion_Alias'] = filtered_data['IDOperacion'].map(lambda x: f"{x} ({operacion_to_alias.get(x, '')})")
 
-    # Mostrar los datos en Streamlit
-    st.write(f"Desembolsos Mensuales para {year} - País(es) seleccionado(s): {', '.join(selected_countries)}")
-    st.write(data_filtered)
-    excel_bytes_monto = dataframe_to_excel_bytes(data_filtered)
-    st.download_button(
-        label="Descargar DataFrame en Excel (Proyectado vs Ejecutado)",
-        data=excel_bytes_monto,
-        file_name="Proyectado vs Ejecutado.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        # Ahora, utilizar IDOperacion_Alias para la selección del proyecto en lugar de IDOperacion
+        unique_operacion_alias = sorted(filtered_data['IDOperacion_Alias'].unique())
+        selected_project_alias = st.selectbox("Selecciona proyecto", ["Todos"] + unique_operacion_alias)
 
-    st.write(monthly_data)
+        if selected_project_alias != "Todos":
+            # Extraer el IDOperacion del alias seleccionado para filtrar
+            selected_project = selected_project_alias.split(" (")[0]  # Asumiendo que el IDOperacion está antes del primer paréntesis
+            filtered_data = filtered_data[filtered_data['IDOperacion'] == selected_project]
+
+        data_filtered = get_data(filtered_data, year)
+        # Obtener datos mensuales para el año seleccionado
+        monthly_data = get_monthly_data(filtered_data, year)
+
+        # Mostrar los datos en Streamlit
+        st.write(f"Desembolsos Mensuales para {year} - País(es) seleccionado(s): {', '.join(selected_countries)}")
+        st.write(data_filtered)
+        excel_bytes_monto = dataframe_to_excel_bytes(data_filtered)
+        st.download_button(
+            label="Descargar DataFrame en Excel (Proyectado vs Ejecutado)",
+            data=excel_bytes_monto,
+            file_name="Proyectado_vs_Ejecutado.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        st.write(monthly_data)
+        
 
     # Convertir el DataFrame a bytes y agregar botón de descarga para ambas tablas
     excel_bytes_monto = dataframe_to_excel_bytes(monthly_data)
