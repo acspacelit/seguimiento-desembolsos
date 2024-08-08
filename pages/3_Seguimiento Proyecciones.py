@@ -49,7 +49,8 @@ def load_data():
     grouped_proyecciones_iniciales = data_proyecciones_iniciales.groupby(['Pais', 'Responsable','IDOperacion', 'Year', 'Month', 'Sector','Alias']).agg({'ProyeccionesIniciales': 'sum'}).reset_index()
 
     # Combina los tres conjuntos de datos: operaciones, proyecciones y proyecciones iniciales
-    merged_data = pd.merge(grouped_operaciones, grouped_proyecciones, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector','Alias'], how='outer').fillna(0)
+    merged_data = pd.merge(grouped_operaciones, grouped_proyecciones, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector','Alias'], how='outer')
+    merged_data = pd.merge(merged_data, grouped_proyecciones_iniciales, on=['Pais', 'IDOperacion', 'Year', 'Month', 'Sector','Alias'], how='outer').fillna(0)
     
      # Función para elegir el valor de 'Responsable'
     def elegir_responsable(row):
@@ -69,7 +70,7 @@ def load_data():
     # Conversiones finales y ajustes de escala
     merged_data['Ejecutados'] = (merged_data['Ejecutados']).round(2)
     merged_data['Proyectados'] = (merged_data['Proyectados']).round(2)
-
+    merged_data['ProyeccionesIniciales'] = (merged_data['ProyeccionesIniciales']).round(2)
     return merged_data
 
 def get_data(data, year):
@@ -81,7 +82,8 @@ def get_monthly_data(data, year):
 
     # Agrupar los datos por mes y sumar los montos
     grouped_data = data_year.groupby('Month').agg({'Ejecutados': 'sum',
-                                                   'Proyectados': 'sum'}).reset_index()
+                                                   'Proyectados': 'sum',
+                                                   'ProyeccionesIniciales': 'sum'}).reset_index()
 
     # Reemplazar el número del mes con el nombre del mes en español
     spanish_months = [calendar.month_name[i].capitalize() for i in range(1, 13)]
