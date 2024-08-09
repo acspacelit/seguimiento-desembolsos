@@ -68,8 +68,8 @@ def load_data():
     merged_data = merged_data.drop(['Responsable_x', 'Responsable_y'], axis=1)
 
     # Conversiones finales y ajustes de escala
-    merged_data['Ejecutados'] = (merged_data['Ejecutados']).round(2)
-    merged_data['Proyectados'] = (merged_data['Proyectados']).round(2)
+    merged_data['Ejecutados'] = (merged_data['Ejecutados']/1000000).round(2)
+    merged_data['Proyectados'] = (merged_data['Proyectados']/1000000).round(2)
     merged_data['ProyeccionesIniciales'] = (merged_data['ProyeccionesIniciales']).round(2)
     return merged_data
 
