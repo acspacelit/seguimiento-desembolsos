@@ -327,8 +327,8 @@ def main():
     # Convertir los valores de año a enteros y obtener la lista ordenada
     unique_years_filtered = sorted(filtered_data['Year'].astype(int).unique())
 
-    # Intentar establecer 2024 como el año predeterminado si está disponible
-    default_year = 2024 if 2024 in unique_years_filtered else (unique_years_filtered[0] if unique_years_filtered else None)
+    # Intentar establecer 2025 como el año predeterminado si está disponible
+    default_year = 2025 if 2025 in unique_years_filtered else (unique_years_filtered[0] if unique_years_filtered else None)
 
     # Seleccionar el año mediante un selectbox
     if default_year is not None:
