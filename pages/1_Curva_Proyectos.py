@@ -13,8 +13,8 @@ _lock = threading.Lock()
 
 # URLs de las hojas de Google Sheets
 sheet_url_proyectos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSHedheaRLyqnjwtsRvlBFFOnzhfarkFMoJ04chQbKZCBRZXh_2REE3cmsRC69GwsUK0PoOVv95xptX/pub?gid=2084477941&single=true&output=csv"
-sheet_url_operaciones = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTadFwCrS_aws658IA94yjGvX_u5oaLnZ8JTVfTZqpaLhI1szZEUbst3rR1rC-zfReRNpMFt93RK_YV/pub?gid=420865954&single=true&output=csv"
-sheet_url_desembolsos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTadFwCrS_aws658IA94yjGvX_u5oaLnZ8JTVfTZqpaLhI1szZEUbst3rR1rC-zfReRNpMFt93RK_YV/pub?gid=0&single=true&output=csv"
+sheet_url_operaciones = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeeSag2FV6X2E2aS7PIXfZmNOW7RQfjAfN9L9R_EaW_q0Z91DZYwK1eLtQago7LFy8qya-ltrJkosb/pub?gid=493057001&single=true&output=csv"
+sheet_url_desembolsos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeeSag2FV6X2E2aS7PIXfZmNOW7RQfjAfN9L9R_EaW_q0Z91DZYwK1eLtQago7LFy8qya-ltrJkosb/pub?gid=268817790&single=true&output=csv"
 
 # Inicializar la aplicación de Streamlit
 st.title("Análisis de Desembolsos por Proyecto")
